@@ -6,6 +6,12 @@ use frame_support::{
 use frame_system::ensure_signed;
 use sp_std::vec::Vec;
 
+#[cfg(test)]
+mod mock;
+
+#[cfg(test)]
+mod tests;
+
 /// Configure the pallet by specifying the parameters and types on which it depends.
 pub trait Trait: frame_system::Trait {
     /// Because this pallet emits events, it depends on the runtime's definition of an event.
@@ -33,6 +39,8 @@ decl_error! {
         NoSuchProof,
         /// The proof is claimed by another account, so caller can't revoke it.
         NotProofOwner,
+        ClaimNotExist,
+        ProofAlreadyExist,
     }
 }
 
@@ -66,7 +74,9 @@ decl_module! {
             let sender = ensure_signed(origin)?;
 
             // Verify that the specified proof has not already been claimed.
-            ensure!(!Proofs::<T>::contains_key(&proof), Error::<T>::ProofAlreadyClaimed);
+            ensure!(!Proofs::<T>::contains_key(&proof), Error::<T>::ProofAlreadyClaimed);		
+            
+            //确保proof长度上限，如果超过长度上限，则返回错误，不放入区块链。
 
             // Get the block number from the FRAME System module.
             let current_block = <frame_system::Module<T>>::block_number();
